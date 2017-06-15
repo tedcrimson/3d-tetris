@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class Spin : MonoBehaviour {
 
-	public KeyCode submitKey;
 	public KeyCode upkey;
 	public KeyCode downKey;
 	public KeyCode leftKey;
@@ -12,6 +11,8 @@ public class Spin : MonoBehaviour {
 	public KeyCode zleftKey;
 	public KeyCode zrightKey; 
 	public KeyCode modeKey;
+
+	public bool IsCore;
 
 	[SpaceAttribute]
 	public float speed = 10;
@@ -26,11 +27,6 @@ public class Spin : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-
-		if(Input.GetKeyDown(submitKey)){
-			GetComponent<Rigidbody>().AddForce(Vector3.left*150);
-			return;
-		}
 
 		if(MoveOn)
 			Move();
@@ -76,19 +72,47 @@ public class Spin : MonoBehaviour {
 		}
 		if(axis != Vector3.zero){
 			endRotation.transform.Rotate(axis * 90, Space.World);
+			endRotation.transform.eulerAngles = RoundVector(endRotation.transform.eulerAngles, 90);
 		}
-
-		this.transform.rotation = Quaternion.Lerp(this.transform.rotation, endRotation.transform.rotation, Time.deltaTime*speed);
+		if(Quaternion.Angle(endRotation.transform.rotation, this.transform.rotation) < 3)
+			this.transform.rotation = endRotation.transform.rotation;
+		else
+			this.transform.rotation = Quaternion.Lerp(this.transform.rotation, endRotation.transform.rotation, Time.deltaTime*speed);
 	}
 
 	/// <summary>
-	/// OnCollisionEnter is called when this collider/rigidbody has begun
-	/// touching another rigidbody/collider.
+	/// OnCollisionStay is called once per frame for every collider/rigidbody
+	/// that is touching rigidbody/collider.
 	/// </summary>
 	/// <param name="other">The Collision data associated with this collision.</param>
-	void OnCollisionEnter(Collision other)
+	void OnTriggerEnter(Collider other)
 	{
-		this.transform.parent = other.collider.transform;
+		if(IsCore) return;
+		IsCore = true;
+		Debug.LogError(this.transform.name);
+
+		LevelManager.Instance.IsFalling = false;
+		this.transform.parent = LevelManager.Instance.CoreObject.transform;
+		this.transform.localEulerAngles = RoundVector(this.transform.localEulerAngles, 90);
+		this.transform.localPosition = RoundVector(this.transform.localPosition, 1);
+		
+		foreach(Transform c in this.transform){
+			c.GetComponent<BoxCollider>().isTrigger = true;
+			LevelManager.Instance.blocks.Add(c.position);
+		}
+		// other.contacts[0].thisCollider.GetComponent<BoxCollider>().enabled = false;
+
 		enabled = false;
 	}
+
+	public Vector3 RoundVector(Vector3 vector, int r){
+		Debug.Log(vector + " R "+ r);
+		var vec = vector;
+		vec.x = Mathf.Round(vec.x / r) * r;
+		vec.y = Mathf.Round(vec.y / r) * r;
+		vec.z = Mathf.Round(vec.z / r) * r;
+		Debug.Log(vec);
+		return vec;
+	}
+
 }
