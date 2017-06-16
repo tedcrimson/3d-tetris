@@ -89,29 +89,30 @@ public class Spin : MonoBehaviour {
 	{
 		if(IsCore) return;
 		IsCore = true;
-		Debug.LogError(this.transform.name);
 
 		LevelManager.Instance.IsFalling = false;
-		this.transform.parent = LevelManager.Instance.CoreObject.transform;
-		this.transform.localEulerAngles = RoundVector(this.transform.localEulerAngles, 90);
-		this.transform.localPosition = RoundVector(this.transform.localPosition, 1);
+		this.transform.eulerAngles = RoundVector(this.transform.eulerAngles, 90);
+		this.transform.position = RoundVector(this.transform.position, 1);
 		
-		foreach(Transform c in this.transform){
+		Transform[] children = this.transform.GetComponentsInChildren<Transform>();
+		foreach(Transform c in children){
+			if(c == this.transform)continue;
+			c.parent = LevelManager.Instance.CoreObject.transform;
 			c.GetComponent<BoxCollider>().isTrigger = true;
-			LevelManager.Instance.blocks.Add(c.position);
+			// Debug.Log(c.localPosition);
+			c.localPosition = RoundVector(c.localPosition,1);
+			LevelManager.Instance.blocks.Add(new Block(c.gameObject));
 		}
 		// other.contacts[0].thisCollider.GetComponent<BoxCollider>().enabled = false;
 
 		enabled = false;
 	}
 
-	public Vector3 RoundVector(Vector3 vector, int r){
-		Debug.Log(vector + " R "+ r);
+	public static Vector3 RoundVector(Vector3 vector, int r){
 		var vec = vector;
 		vec.x = Mathf.Round(vec.x / r) * r;
 		vec.y = Mathf.Round(vec.y / r) * r;
 		vec.z = Mathf.Round(vec.z / r) * r;
-		Debug.Log(vec);
 		return vec;
 	}
 

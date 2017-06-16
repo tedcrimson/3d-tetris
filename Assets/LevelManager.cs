@@ -7,14 +7,17 @@ public class LevelManager : MonoBehaviour {
 
 	public static LevelManager Instance;
 	public List<GameObject> brickPrefabs;
+	public GameObject corePrefab;
 	public Material mat;
 	public GameObject CoreObject;
+	public GameObject MatrixObject;
 	public GameObject currentBrick;
 
 	public bool IsFalling = false;
 
-	public List<Vector3> blocks;
+	public List<Block> blocks;
 	List<List<Vector3>> levels; 
+
 
 	/// <summary>
 	/// Awake is called when the script instance is being loaded.
@@ -27,37 +30,87 @@ public class LevelManager : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		InitBrick();
-		int length = 4;
 		levels = new List<List<Vector3>>();
-		blocks = new List<Vector3>();
+		blocks = new List<Block>();
 
-		for(int level = 0; level < 2; level++){
+		for(int level = 0; level < 3; level++){
 			levels.Add(new List<Vector3>());
+			int length = 2*level + 3;
+			GameObject pivot = new GameObject();
+			pivot.transform.parent = CoreObject.transform;
+			pivot.transform.localPosition = Vector3.zero;
+			pivot.transform.Translate((Vector3.back + Vector3.down + Vector3.left)*(level+1));
 			for (int i = 0; i < length; i++)
 			{
 				for (int j = 0; j < length; j++)
 				{
 					for (int k = 0; k < length; k++)
 					{
+
 						int l = length - 1;
-						if((i > 0 || j > 0 || k > 0) && (i < l || j < l || k < l))continue;
-						Debug.Log("ADD");
-						levels[level].Add(new Vector3(i, j, k));
+						if(i == 0 || j == 0 || k == 0 || i == l || j == l || k == l){
+							if(level == 0){
+								GameObject g = Instantiate(corePrefab);
+								g.transform.parent = MatrixObject.transform;
+								g.transform.localPosition = new Vector3(i,j,k);
+							}
+							Vector3 v = new Vector3(i, j, k)+pivot.transform.localPosition;
+							levels[level].Add(v);
+						}
 					}
 				}
 			}
+
+			Destroy(pivot);
 		}
-		Debug.Log(levels[0].Count);
+
+
+		MatrixObject.transform.Translate((Vector3.back + Vector3.down + Vector3.left)*(3-1)/2f);
+		Debug.Log(levels[1].Count);
 
 	}
 
 	
 	void Update () {
-		bool z = levels[0].All(x=> blocks.Contains(x));
-		if(z){
-			Debug.LogError("sheivso");
+		int z = 0;
+		foreach(var x in levels[1]){
+			foreach(var y in blocks){
+				if(x == y.Position){
+					z++;
+					break;
+				}
+				Vector3 co = Spin.RoundVector((CoreObject.transform.position - y.Object.transform.position).normalized, 1);
+				Debug.DrawRay(y.Object.transform.position, co);
+			}
 		}
 
+		
+
+		// int z = levels[1].Count(x=> blocks.Contains(x) == true);
+		if(z > 3){
+			foreach(var x in levels[1]){
+				for (int i = blocks.Count - 1; i >= 0; i--)
+				{
+					if(x == blocks[i].Position){
+						Destroy(blocks[i].Object);
+						blocks.RemoveAt(i);
+					}
+				}
+			}
+
+			foreach(var x in levels[2]){
+				for (int i = blocks.Count - 1; i >= 0; i--)
+				{
+					if(x == blocks[i].Position){
+						Vector3 co = Spin.RoundVector((CoreObject.transform.position - blocks[i].Object.transform.position).normalized, 1);
+						Debug.DrawRay(blocks[i].Object.transform.position, co, Color.red);
+						blocks[i].Move(co);
+						Debug.LogError("WAT");
+						break;
+					}
+				}
+			}
+		}	
 
 		// if(Input.GetKeyDown(KeyCode.Space)){
 		// 	StartCoroutine(currentBrick.Submit()); GetComponent<Rigidbody>().AddForce(Vector3.left*150);
