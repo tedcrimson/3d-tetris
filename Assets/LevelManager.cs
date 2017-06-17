@@ -29,14 +29,14 @@ public class LevelManager : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		InitBrick();
 		levels = new List<List<Vector3>>();
 		blocks = new List<Block>();
 
-		for(int level = 0; level < 3; level++){
+		for(int level = 0; level < 5; level++){
 			levels.Add(new List<Vector3>());
 			int length = 2*level + 3;
 			GameObject pivot = new GameObject();
+			pivot.name ="Pivot";
 			pivot.transform.parent = CoreObject.transform;
 			pivot.transform.localPosition = Vector3.zero;
 			pivot.transform.Translate((Vector3.back + Vector3.down + Vector3.left)*(level+1));
@@ -53,6 +53,7 @@ public class LevelManager : MonoBehaviour {
 								GameObject g = Instantiate(corePrefab);
 								g.transform.parent = MatrixObject.transform;
 								g.transform.localPosition = new Vector3(i,j,k);
+								blocks.Add(new Block(g, BlockType.Core));
 							}
 							Vector3 v = new Vector3(i, j, k)+pivot.transform.localPosition;
 							levels[level].Add(v);
@@ -66,52 +67,47 @@ public class LevelManager : MonoBehaviour {
 
 
 		MatrixObject.transform.Translate((Vector3.back + Vector3.down + Vector3.left)*(3-1)/2f);
-		Debug.Log(levels[1].Count);
+		InitBrick();
 
 	}
-
-	
-	void Update () {
-		int z = 0;
-		foreach(var x in levels[1]){
-			foreach(var y in blocks){
-				if(x == y.Position){
-					z++;
-					break;
-				}
-				Vector3 co = Spin.RoundVector((CoreObject.transform.position - y.Object.transform.position).normalized, 1);
-				Debug.DrawRay(y.Object.transform.position, co);
-			}
-		}
-
-		
-
-		// int z = levels[1].Count(x=> blocks.Contains(x) == true);
-		if(z > 3){
-			foreach(var x in levels[1]){
-				for (int i = blocks.Count - 1; i >= 0; i--)
-				{
-					if(x == blocks[i].Position){
-						Destroy(blocks[i].Object);
-						blocks.RemoveAt(i);
-					}
-				}
-			}
-
-			foreach(var x in levels[2]){
-				for (int i = blocks.Count - 1; i >= 0; i--)
-				{
-					if(x == blocks[i].Position){
-						Vector3 co = Spin.RoundVector((CoreObject.transform.position - blocks[i].Object.transform.position).normalized, 1);
-						Debug.DrawRay(blocks[i].Object.transform.position, co, Color.red);
-						blocks[i].Move(co);
-						Debug.LogError("WAT");
+	public bool[] Remove(){
+		bool[] removeLevels = new bool[5];
+		for(int l = 1; l < 5; l++){
+			int z = 0;
+			foreach(var x in levels[l]){
+				foreach(var y in blocks){
+					if(x == y.m_Position){
+						z++;
 						break;
 					}
+					Vector3 co = Spin.RoundVector((CoreObject.transform.position - y.m_GameObject.transform.position).normalized, 1);
+					Debug.DrawRay(y.m_GameObject.transform.position, co);
 				}
 			}
-		}	
 
+			float count = Mathf.Pow(2*l + 3, 3f) - Mathf.Pow(2*(l-1) + 3, 3f);
+			int f = (int)count/4;
+			Debug.Log("Level " + l + " " + z + "/" + f);
+			// int z = levels[1].Count(x=> blocks.Contains(x) == true);
+			if(z > f){
+				removeLevels[l] = true;
+				foreach(var x in levels[l]){
+					for (int i = blocks.Count - 1; i >= 0; i--)
+					{
+						if(x == blocks[i].m_Position && blocks[i].m_Type == BlockType.Default){
+							Destroy(blocks[i].m_GameObject);
+							blocks.RemoveAt(i);
+						}
+					}
+				}
+			}
+		}
+		return removeLevels;
+	}
+	
+	void Update () {
+		
+		
 		// if(Input.GetKeyDown(KeyCode.Space)){
 		// 	StartCoroutine(currentBrick.Submit()); GetComponent<Rigidbody>().AddForce(Vector3.left*150);
 		// 	return;
@@ -133,12 +129,37 @@ public class LevelManager : MonoBehaviour {
 		StartCoroutine(BrickFall());
 	}
 
+	public void Blow(){
+		Debug.ClearDeveloperConsole();
+
+		bool[] removeArray = Remove();
+		if(removeArray.All(x=>!x))return;
+		int m = 0;
+		for(int l=0; l < 5; l++){
+			if(l+1 == 5)continue;
+			if(removeArray[l])m++;
+			foreach(var x in levels[l+1]){
+				for (int i = blocks.Count - 1; i >= 0; i--)
+				{
+					if(x == blocks[i].m_Position){
+						Vector3 co = m * Spin.RoundVector((CoreObject.transform.position - blocks[i].m_GameObject.transform.position).normalized, 1);
+						Debug.DrawRay(blocks[i].m_GameObject.transform.position, co, Color.red);
+						
+						blocks[i].Move(blocks, co);
+						break;
+					}
+				}
+			}
+		}
+	}
+
 	IEnumerator BrickFall(){
+		Debug.LogError("Brickfall");		
 		while(IsFalling){
 			currentBrick.transform.Translate(Vector3.left/5, Space.World);
 			yield return new WaitForSeconds(.05f);
 		}
-		yield return new WaitForSeconds(2f);
+		yield return new WaitForSeconds(.5f);
 		InitBrick();
 	}
 }

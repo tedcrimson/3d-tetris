@@ -1,4 +1,4 @@
-﻿using System.Collections;
+﻿using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -23,6 +23,7 @@ public class Spin : MonoBehaviour {
 
 	void Start(){
 		endRotation = new GameObject();
+		endRotation.name ="rotato";
 	}
 	
 	// Update is called once per frame
@@ -49,8 +50,22 @@ public class Spin : MonoBehaviour {
 		}
 		if(vec != Vector3.zero){
 			this.transform.Translate(vec, Space.World);
+			if(!CheckMove()){
+				this.transform.Translate(-vec, Space.World);
+				Stick();
+				Debug.LogError("Cant Move there");
+			}
+			
 		}
-
+	}
+	public bool CheckMove(){
+		List<Block> blocks =LevelManager.Instance.blocks;
+		Transform core = LevelManager.Instance.CoreObject.transform;
+		foreach(Transform c in this.transform){
+			if(blocks.Any(x=>x.m_GameObject.transform.position == RoundVector(c.position,1)))
+				return false;
+		}
+		return true;
 	}
 
 	private void Rotate(){
@@ -80,13 +95,7 @@ public class Spin : MonoBehaviour {
 			this.transform.rotation = Quaternion.Lerp(this.transform.rotation, endRotation.transform.rotation, Time.deltaTime*speed);
 	}
 
-	/// <summary>
-	/// OnCollisionStay is called once per frame for every collider/rigidbody
-	/// that is touching rigidbody/collider.
-	/// </summary>
-	/// <param name="other">The Collision data associated with this collision.</param>
-	void OnTriggerEnter(Collider other)
-	{
+	private void Stick(){
 		if(IsCore) return;
 		IsCore = true;
 
@@ -101,11 +110,27 @@ public class Spin : MonoBehaviour {
 			c.GetComponent<BoxCollider>().isTrigger = true;
 			// Debug.Log(c.localPosition);
 			c.localPosition = RoundVector(c.localPosition,1);
+			c.localEulerAngles = Vector3.zero;
 			LevelManager.Instance.blocks.Add(new Block(c.gameObject));
 		}
 		// other.contacts[0].thisCollider.GetComponent<BoxCollider>().enabled = false;
+		LevelManager.Instance.Blow();
+		Destroy(endRotation);
+		Destroy(this.gameObject);
+	}
 
-		enabled = false;
+	/// <summary>
+	/// OnCollisionStay is called once per frame for every collider/rigidbody
+	/// that is touching rigidbody/collider.
+	/// </summary>
+	/// <param name="other">The Collision data associated with this collision.</param>
+	void OnTriggerEnter(Collider other)
+	{
+		if(other.tag == "Kratos"){
+			Destroy(this.gameObject);
+			LevelManager.Instance.IsFalling = false;
+		}else
+			Stick();
 	}
 
 	public static Vector3 RoundVector(Vector3 vector, int r){
