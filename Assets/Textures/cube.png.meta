@@ -12,8 +12,8 @@ TextureImporter:
     linearTexture: 0
     fadeOut: 0
     borderMipMap: 0
-    mipMapFadeDistanceStart: 1
-    mipMapFadeDistanceEnd: 3
+    mipMapFadeDistanceStart: 9
+    mipMapFadeDistanceEnd: 10
   bumpmap:
     convertToNormalMap: 0
     externalNormalMap: 0

@@ -43,30 +43,32 @@ public class Block {
 		
 		if(blocks.Any(b=>b.m_Position == newPos)){
 			Debug.Log("Cant Move"+m_GameObject.name +" to " + newPos);
+			blocks.Remove(this);
+			Object.Destroy(m_GameObject);
 			return;
 		}else{
 			m_Position = newPos;
 			m_GameObject.transform.localPosition = newPos;
-			if(!HasNeighboars(blocks)){
-				blocks.Remove(this);
-				Object.Destroy(m_GameObject);
-				Debug.LogError("Remove Single" + m_GameObject.name);
-			}
+			// if(!HasNeighboars(blocks)){
+			// 	blocks.Remove(this);
+			// 	Object.Destroy(m_GameObject);
+			// 	Debug.LogError("Remove Single" + m_GameObject.name);
+			// }
 		}
 		Object.Destroy(temp.gameObject);
 	}
 
-	public bool HasNeighboars(List<Block> blocks){
-		Vector3[] dirs = new Vector3[]{
-			Vector3.up, Vector3.down, 
-			Vector3.left, Vector3.right, 
-			Vector3.forward, Vector3.back
-		};
-		foreach(var dir in dirs){
-			var n = m_GameObject.transform.localPosition + dir;
-			if(blocks.Any(x=> x.m_GameObject.transform.localPosition == n))
-				return true;
-		}
-		return false;
-	}
+	// public bool HasNeighboars(List<Block> blocks){
+	// 	Vector3[] dirs = new Vector3[]{
+	// 		Vector3.up, Vector3.down, 
+	// 		Vector3.left, Vector3.right, 
+	// 		Vector3.forward, Vector3.back
+	// 	};
+	// 	foreach(var dir in dirs){
+	// 		var n = m_GameObject.transform.localPosition + dir;
+	// 		if(blocks.Any(x=> x.m_GameObject.transform.localPosition == n))
+	// 			return true;
+	// 	}
+	// 	return false;
+	// }
 }
